@@ -1,54 +1,39 @@
-# React + TypeScript + Vite
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+<div align="center">
+<h1 align="center">
+  <a href="https://beru-bedtime-stories.vercel.app/">Beru</a>
+</h1>
+  <p>
+    Let AI generate and read bedtime stories for your kids.
+  </p>
+</div>
 
-Currently, two official plugins are available:
+## Free and Open Source
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+Beru is free and open source. You use it with your own API keys which stored securely.
 
-## Expanding the ESLint configuration
+API Keys needed:
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- OpenAI API Key
+- HumeAI API Key
 
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
-```
+## Tech stack 💻
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+- [React](https://react.dev/) for frontend.
+- [Convex](https://www.convex.dev/) for backend.
+- [Motion](https://motion.dev/) for animations.
+- [Tailwind](https://tailwindcss.com/) for styling.
+- [Shadcn](https://ui.shadcn.com/) for components.
+- [Vercel](https://vercel.com/) for hosting and web analytics.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Cloning & running 🏄
 
-export default tseslint.config({
-  plugins: {
-    // Add the react-x and react-dom plugins
-    'react-x': reactX,
-    'react-dom': reactDom,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended typescript rules
-    ...reactX.configs['recommended-typescript'].rules,
-    ...reactDom.configs.recommended.rules,
-  },
-})
-```
+1. Clone the repo: `git clone https://github.com/tigerabrodi/beru`
+2. Setup a Convex account and create a new project.
+3. Run `pnpm install`
+4. Run `npx convex dev` (this will setup your `.env.local` file)
+5. Run `pnpm dev`
+
+## License
+
+This project is licensed under the MIT License ❤️
