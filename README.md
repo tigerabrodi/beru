@@ -37,3 +37,6 @@ API Keys needed:
 ## License
 
 This project is licensed under the MIT License ❤️
+
+
+// TODO: do the auth page, add convex, add convex auth, implement login, and then implement the authenticated pages, then do the api keys
