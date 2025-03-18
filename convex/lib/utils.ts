@@ -1,10 +1,6 @@
-import { clsx, type ClassValue } from 'clsx'
-import { twMerge } from 'tailwind-merge'
-
-export function cn(...inputs: Array<ClassValue>) {
-  return twMerge(clsx(inputs))
-}
-
+/**
+ * Shared utility functions
+ */
 export async function handlePromise<PromiseResult>(
   promise: Promise<PromiseResult>
 ): Promise<[Error | null, PromiseResult | null]> {
@@ -14,4 +10,11 @@ export async function handlePromise<PromiseResult>(
   } catch (error) {
     return [error instanceof Error ? error : new Error(String(error)), null]
   }
+}
+
+/**
+ * Get current timestamp in milliseconds
+ */
+export function getCurrentTimestamp(): number {
+  return Date.now()
 }
