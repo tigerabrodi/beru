@@ -1,4 +1,3 @@
-
 <div align="center">
 <h1 align="center">
   <a href="https://beru-bedtime-stories.vercel.app/">Beru</a>
@@ -38,5 +37,8 @@ API Keys needed:
 
 This project is licensed under the MIT License ❤️
 
+## TODO
 
-// TODO: do the auth page, add convex, add convex auth, implement login, and then implement the authenticated pages, then do the api keys
+- login page
+- authenticated layout to use convex stuff
+- make sure auth works
