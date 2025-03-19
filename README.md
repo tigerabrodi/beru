@@ -36,9 +36,3 @@ API Keys needed:
 ## License
 
 This project is licensed under the MIT License ❤️
-
-## TODO
-
-- login page
-- authenticated layout to use convex stuff
-- make sure auth works
