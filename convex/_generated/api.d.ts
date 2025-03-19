@@ -16,6 +16,7 @@ import type {
 import type * as auth from "../auth.js";
 import type * as http from "../http.js";
 import type * as lib_utils from "../lib/utils.js";
+import type * as stories_queries from "../stories/queries.js";
 import type * as users_queries from "../users/queries.js";
 
 /**
@@ -30,6 +31,7 @@ declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   http: typeof http;
   "lib/utils": typeof lib_utils;
+  "stories/queries": typeof stories_queries;
   "users/queries": typeof users_queries;
 }>;
 export declare const api: FilterApi<
