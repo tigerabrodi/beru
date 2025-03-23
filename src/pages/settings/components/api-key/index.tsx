@@ -11,8 +11,9 @@ import { Label } from '@/components/ui/label'
 import { handlePromise } from '@/lib/utils'
 import { api } from '@convex/_generated/api'
 import { useAction } from 'convex/react'
+import { ConvexError } from 'convex/values'
 import { Eye, EyeOff } from 'lucide-react'
-import { useActionState, useState } from 'react'
+import { useActionState, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
 type FormState = {
@@ -25,8 +26,38 @@ export function ApiKeySettings() {
   const [showOpenAIKey, setShowOpenAIKey] = useState(false)
   const [showHumeAIKey, setShowHumeAIKey] = useState(false)
 
+  const [isLoadingOpenAiKey, setIsLoadingOpenAiKey] = useState(true)
+  const [isLoadingHumeAiKey, setIsLoadingHumeAiKey] = useState(true)
+
   const storeOpenAiApiKey = useAction(api.users.actions.storeOpenAiApiKey)
   const storeHumeAiApiKey = useAction(api.users.actions.storeHumeApiKey)
+
+  const getOpenAiApiKey = useAction(api.users.actions.getOpenAiApiKey)
+  const getHumeAiApiKey = useAction(api.users.actions.getHumeApiKey)
+
+  useEffect(() => {
+    getOpenAiApiKey()
+      .then((key) => {
+        setOpenAIKey(key || '')
+      })
+      .catch((error) => {
+        console.error(error)
+      })
+      .finally(() => {
+        setIsLoadingOpenAiKey(false)
+      })
+
+    getHumeAiApiKey()
+      .then((key) => {
+        setHumeAIKey(key || '')
+      })
+      .catch((error) => {
+        console.error(error)
+      })
+      .finally(() => {
+        setIsLoadingHumeAiKey(false)
+      })
+  }, [getHumeAiApiKey, getOpenAiApiKey])
 
   const [, formAction, isSaving] = useActionState<FormState, FormData>(
     async (_, formData) => {
@@ -43,7 +74,12 @@ export function ApiKeySettings() {
       )
 
       if (openAiError) {
-        toast.error('Failed to store OpenAI API key')
+        if (openAiError instanceof ConvexError) {
+          toast.error(openAiError.data as string)
+        } else {
+          toast.error('Failed to store OpenAI API key')
+        }
+
         return { status: 'error' }
       }
 
@@ -52,10 +88,16 @@ export function ApiKeySettings() {
       )
 
       if (humeAiError) {
-        toast.error('Failed to store Hume API key')
+        if (humeAiError instanceof ConvexError) {
+          toast.error(humeAiError.data as string)
+        } else {
+          toast.error('Failed to store Hume API key')
+        }
+
         return { status: 'error' }
       }
 
+      toast.success('API keys saved successfully')
       return { status: 'success' }
     },
     { status: 'idle' }
@@ -87,6 +129,9 @@ export function ApiKeySettings() {
                   name="openaiApiKey"
                   type={showOpenAIKey ? 'text' : 'password'}
                   value={openAIKey}
+                  required
+                  disabled={isLoadingOpenAiKey}
+                  isLoading={isLoadingOpenAiKey}
                   onChange={(event) => setOpenAIKey(event.target.value)}
                   placeholder="sk-..."
                   trailingElement={
@@ -131,6 +176,9 @@ export function ApiKeySettings() {
                   name="humeApiKey"
                   type={showHumeAIKey ? 'text' : 'password'}
                   value={humeAIKey}
+                  required
+                  disabled={isLoadingHumeAiKey}
+                  isLoading={isLoadingHumeAiKey}
                   onChange={(event) => setHumeAIKey(event.target.value)}
                   placeholder="hume_..."
                   trailingElement={
@@ -162,15 +210,10 @@ export function ApiKeySettings() {
         disabled={isSaving}
         type="submit"
         className="w-full md:w-auto md:self-end"
+        isLoading={isSaving}
+        loadingText="Saving..."
       >
-        {isSaving ? (
-          <>
-            <div className="mr-2 size-4 animate-spin rounded-full border-2 border-current border-t-transparent"></div>
-            Saving...
-          </>
-        ) : (
-          'Save API Keys'
-        )}
+        Save API Keys
       </Button>
     </form>
   )
