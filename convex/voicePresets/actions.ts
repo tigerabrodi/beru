@@ -1,10 +1,26 @@
+'use node'
+
 import { getAuthUserId } from '@convex-dev/auth/server'
 import { ConvexError, v } from 'convex/values'
 import { HumeClient } from 'hume'
+import { z } from 'zod'
 import { api } from '../_generated/api'
 import { Id } from '../_generated/dataModel'
 import { action } from '../_generated/server'
 import { handlePromise } from '../lib/utils'
+
+const HUME_CLIENT_ERROR_SLUG = 'client_error'
+
+const HUME_UNIQUE_NAME_ERROR_CODE = 'E0603'
+
+const humeErrorBodySchema = z.object({
+  details: z.object({
+    type: z.string(),
+    message: z.string(),
+    code: z.string(),
+    slug: z.string(),
+  }),
+})
 
 /**
  * Generate and save a new voice preset
@@ -48,6 +64,8 @@ export const generateVoicePreset = action({
       })
     )
 
+    console.log('speechError', speechError)
+
     if (speechError || !speech) {
       throw new ConvexError(`Failed to generate voice: ${speechError?.message}`)
     }
@@ -64,9 +82,26 @@ export const generateVoicePreset = action({
     )
 
     if (saveError) {
-      throw new ConvexError(
-        `Failed to save voice to Hume: ${saveError.message}`
+      // this is honestly just to satisfy typescript
+      const parsedError = humeErrorBodySchema.safeParse(
+        'body' in saveError ? saveError.body : {}
       )
+
+      if (parsedError.success) {
+        const bodyError = parsedError.data.details
+
+        const isUniqueNameError =
+          bodyError.code === HUME_UNIQUE_NAME_ERROR_CODE &&
+          bodyError.slug === HUME_CLIENT_ERROR_SLUG
+
+        if (isUniqueNameError) {
+          throw new ConvexError(
+            `Voice preset with name ${args.name} already exists in Hume. Names in hume must be unique. To fix this, go to my voices in Hume if you want to remove it.`
+          )
+        }
+      }
+
+      throw new ConvexError(`Failed to save voice to Hume.`)
     }
 
     // Store sample audio in Convex
