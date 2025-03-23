@@ -13,6 +13,7 @@ import { handlePromise } from '@/lib/utils'
 import { api } from '@convex/_generated/api'
 import { Id } from '@convex/_generated/dataModel'
 import { useMutation } from 'convex/react'
+import { ConvexError } from 'convex/values'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
@@ -64,7 +65,12 @@ export function EditVoicePresetDialog({
     )
 
     if (error) {
-      toast.error('Failed to update voice preset')
+      if (error instanceof ConvexError) {
+        toast.error(error.data as string)
+      } else {
+        toast.error('Failed to update voice preset')
+      }
+
       return
     }
 

@@ -13,12 +13,17 @@ import { Textarea } from '@/components/ui/textarea'
 import { handlePromise } from '@/lib/utils'
 import { api } from '@convex/_generated/api'
 import { useAction } from 'convex/react'
+import { ConvexError } from 'convex/values'
 import { Plus } from 'lucide-react'
-import { useState } from 'react'
+import { useActionState, useState } from 'react'
 import { toast } from 'sonner'
 
 interface AddVoicePresetDialogProps {
   showEmptyState?: boolean
+}
+
+type FormState = {
+  status: 'error' | 'success' | 'idle'
 }
 
 export function AddVoicePresetDialog({
@@ -34,28 +39,41 @@ export function AddVoicePresetDialog({
     setDescription('')
   }
 
-  const handleAddPreset = async () => {
-    if (!name || !description) {
-      toast.error('Name and description are required')
-      return
-    }
+  const handleAddPreset = async () => {}
 
-    const [error] = await handlePromise(
-      addVoicePreset({
-        name,
-        description,
-      })
-    )
+  const [, formAction, isSubmitting] = useActionState<FormState, FormData>(
+    async () => {
+      if (!name || !description) {
+        toast.error('Name and description are required')
+        return { status: 'error' }
+      }
 
-    if (error) {
-      toast.error('Failed to add voice preset')
-      return
-    }
+      const [error] = await handlePromise(
+        addVoicePreset({
+          name,
+          description,
+        })
+      )
 
-    toast.success('Voice preset added successfully')
-    resetForm()
-    setIsOpen(false)
-  }
+      if (error) {
+        if (error instanceof ConvexError) {
+          console.log({ error })
+          toast.error(error.data as string)
+        } else {
+          toast.error('Failed to add voice preset')
+        }
+
+        return { status: 'error' }
+      }
+
+      toast.success('Voice preset added successfully')
+      resetForm()
+      setIsOpen(false)
+
+      return { status: 'success' }
+    },
+    { status: 'idle' }
+  )
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -72,41 +90,54 @@ export function AddVoicePresetDialog({
         )}
       </DialogTrigger>
       <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Add Voice Preset</DialogTitle>
-        </DialogHeader>
+        <form action={formAction}>
+          <DialogHeader>
+            <DialogTitle>Add Voice Preset</DialogTitle>
+          </DialogHeader>
 
-        <div className="flex flex-col gap-4 py-4">
-          <div>
-            <Label htmlFor="voice-name">Voice Name</Label>
-            <Input
-              id="voice-name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="E.g. Friendly Grandma"
-              className="mt-1"
-            />
+          <div className="flex flex-col gap-4 py-4">
+            <div>
+              <Label htmlFor="voice-name">Voice Name</Label>
+              <Input
+                id="voice-name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="E.g. Friendly Grandma"
+                className="mt-1"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="voice-description">Voice Description</Label>
+              <Textarea
+                id="voice-description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Describe the voice in detail (e.g. A warm, gentle voice like a loving grandmother telling bedtime stories)"
+                className="mt-1 resize-none"
+                rows={3}
+              />
+            </div>
           </div>
 
-          <div>
-            <Label htmlFor="voice-description">Voice Description</Label>
-            <Textarea
-              id="voice-description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Describe the voice in detail (e.g. A warm, gentle voice like a loving grandmother telling bedtime stories)"
-              className="mt-1 resize-none"
-              rows={3}
-            />
-          </div>
-        </div>
-
-        <DialogFooter>
-          <Button variant="outline" onClick={() => setIsOpen(false)}>
-            Cancel
-          </Button>
-          <Button onClick={handleAddPreset}>Add Voice</Button>
-        </DialogFooter>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsOpen(false)}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleAddPreset}
+              isLoading={isSubmitting}
+              disabled={isSubmitting}
+              loadingText="Adding voice preset..."
+            >
+              Add Voice
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   )
