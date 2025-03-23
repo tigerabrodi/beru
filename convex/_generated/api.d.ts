@@ -14,6 +14,7 @@ import type {
   FunctionReference,
 } from "convex/server";
 import type * as auth from "../auth.js";
+import type * as childProfiles_mutations from "../childProfiles/mutations.js";
 import type * as childProfiles_queries from "../childProfiles/queries.js";
 import type * as http from "../http.js";
 import type * as lib_utils from "../lib/utils.js";
@@ -37,6 +38,7 @@ import type * as voicePresets_queries from "../voicePresets/queries.js";
  */
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
+  "childProfiles/mutations": typeof childProfiles_mutations;
   "childProfiles/queries": typeof childProfiles_queries;
   http: typeof http;
   "lib/utils": typeof lib_utils;
