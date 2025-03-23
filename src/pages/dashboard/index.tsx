@@ -12,6 +12,7 @@ import { api } from '@convex/_generated/api'
 import { Id } from '@convex/_generated/dataModel'
 import { StoryIdeasType } from '@convex/stories/actions'
 import { useAction, useQuery } from 'convex/react'
+import { ConvexError } from 'convex/values'
 import { Sparkles } from 'lucide-react'
 import { useActionState, useEffect, useState } from 'react'
 import { generatePath, useNavigate } from 'react-router'
@@ -98,7 +99,12 @@ export function DashboardPage() {
       )
 
       if (error) {
-        toast.error('Failed to generate story ideas')
+        if (error instanceof ConvexError) {
+          toast.error(error.data as string)
+        } else {
+          toast.error('Failed to generate story ideas')
+        }
+
         return { status: 'error' }
       }
 
@@ -140,7 +146,12 @@ export function DashboardPage() {
     )
 
     if (error) {
-      toast.error('Failed to create story')
+      if (error instanceof ConvexError) {
+        toast.error(error.data as string)
+      } else {
+        toast.error('Failed to create story')
+      }
+
       return
     }
 
