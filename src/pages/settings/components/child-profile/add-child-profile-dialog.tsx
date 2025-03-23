@@ -9,10 +9,10 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Status } from '@/lib/schemas'
 import { handlePromise } from '@/lib/utils'
 import { Id } from '@convex/_generated/dataModel'
-import { useState } from 'react'
+import { ConvexError } from 'convex/values'
+import { useActionState, useState } from 'react'
 import { toast } from 'sonner'
 
 export type AddChildProfileDialogProps = {
@@ -25,6 +25,10 @@ export type AddChildProfileDialogProps = {
   }) => Promise<Id<'childProfiles'>>
 }
 
+type FormState = {
+  status: 'error' | 'success' | 'idle'
+}
+
 export function AddChildProfileDialog({
   isOpen,
   onOpenChange,
@@ -33,7 +37,6 @@ export function AddChildProfileDialog({
   const [name, setName] = useState('')
   const [age, setAge] = useState('')
   const [interests, setInterests] = useState('')
-  const [status, setStatus] = useState<Status>('idle')
 
   const resetForm = () => {
     setName('')
@@ -41,97 +44,96 @@ export function AddChildProfileDialog({
     setInterests('')
   }
 
-  const handleAddProfile = async () => {
-    if (!name || !age) {
-      toast.error('Name and age are required')
-      return
-    }
+  const [, formAction, isLoading] = useActionState<FormState, FormData>(
+    async () => {
+      if (!name || !age) {
+        toast.error('Name and age are required')
+        return { status: 'error' }
+      }
 
-    setStatus('loading')
+      const [error] = await handlePromise(
+        onAddProfile({
+          name,
+          age: Number(age),
+          interests,
+        })
+      )
 
-    const [error] = await handlePromise(
-      onAddProfile({
-        name,
-        age: Number(age),
-        interests,
-      })
-    )
+      if (error) {
+        if (error instanceof ConvexError) {
+          toast.error(error.data as string)
+        } else {
+          toast.error('Failed to add child profile')
+        }
 
-    if (error) {
-      toast.error('Failed to add child profile')
-      setStatus('error')
-      return
-    }
+        return { status: 'error' }
+      }
 
-    setStatus('success')
-    toast.success('Child profile added successfully')
-    resetForm()
-    onOpenChange(false)
-  }
+      toast.success('Child profile added successfully')
+      resetForm()
+      onOpenChange(false)
 
-  const isLoading = status === 'loading'
+      return { status: 'success' }
+    },
+    { status: 'idle' }
+  )
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Add Child Profile</DialogTitle>
-        </DialogHeader>
+        <form action={formAction}>
+          <DialogHeader>
+            <DialogTitle>Add Child Profile</DialogTitle>
+          </DialogHeader>
 
-        <div className="flex flex-col gap-4 py-4">
-          <div>
-            <Label htmlFor="name">Child&apos;s Name</Label>
-            <Input
-              id="name"
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              placeholder="Enter child's name"
-              className="mt-1"
-            />
+          <div className="flex flex-col gap-4 py-4">
+            <div>
+              <Label htmlFor="name">Child&apos;s Name</Label>
+              <Input
+                id="name"
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                placeholder="Enter child's name"
+                className="mt-1"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="age">Child&apos;s Age</Label>
+              <Input
+                id="age"
+                value={age}
+                onChange={(event) => setAge(event.target.value)}
+                placeholder="Enter child's age"
+                type="number"
+                min="1"
+                max="12"
+                className="mt-1"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="interests">Child&apos;s Interests</Label>
+              <InputWithFeedback
+                id="interests"
+                value={interests}
+                onChange={(event) => setInterests(event.target.value)}
+                placeholder="E.g. dinosaurs, space, princesses"
+                className="mt-1"
+                helperText="Separate multiple interests with commas"
+              />
+            </div>
           </div>
 
-          <div>
-            <Label htmlFor="age">Child&apos;s Age</Label>
-            <Input
-              id="age"
-              value={age}
-              onChange={(event) => setAge(event.target.value)}
-              placeholder="Enter child's age"
-              type="number"
-              min="1"
-              max="12"
-              className="mt-1"
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="interests">Child&apos;s Interests</Label>
-            <InputWithFeedback
-              id="interests"
-              value={interests}
-              onChange={(event) => setInterests(event.target.value)}
-              placeholder="E.g. dinosaurs, space, princesses"
-              className="mt-1"
-              helperText="Separate multiple interests with commas"
-            />
-          </div>
-        </div>
-
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button onClick={handleAddProfile} disabled={isLoading}>
-            {isLoading ? (
-              <>
-                <div className="mr-2 size-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                Adding...
-              </>
-            ) : (
-              'Add Profile'
-            )}
-          </Button>
-        </DialogFooter>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" isLoading={isLoading} loadingText="Adding...">
+              Add Profile
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   )

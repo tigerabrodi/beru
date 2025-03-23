@@ -7,13 +7,11 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
-import { handlePromise } from '@/lib/utils'
 import { api } from '@convex/_generated/api'
 import { Doc, Id } from '@convex/_generated/dataModel'
 import { useMutation, useQuery } from 'convex/react'
 import { Edit, Plus, Trash2 } from 'lucide-react'
 import { useState } from 'react'
-import { toast } from 'sonner'
 import { AddChildProfileDialog } from './add-child-profile-dialog'
 import { DeleteChildProfileDialog } from './delete-child-profile-dialog'
 import { EditChildProfileDialog } from './edit-child-profile-dialog'
@@ -35,9 +33,14 @@ export function ChildProfileSettings() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [editingProfileId, setEditingProfileId] =
     useState<Id<'childProfiles'> | null>(null)
-  const [deletingProfileId, setDeletingProfileId] =
-    useState<Id<'childProfiles'> | null>(null)
-  const [deletingProfileName, setDeletingProfileName] = useState('')
+
+  const [deletingProfileState, setDeletingProfileState] = useState<{
+    name: string
+    id: Id<'childProfiles'> | null
+  }>({
+    name: '',
+    id: null,
+  })
 
   const [initialEditProfileState, setInitialEditProfileState] = useState({
     name: '',
@@ -78,27 +81,19 @@ export function ChildProfileSettings() {
   }
 
   const openDeleteDialog = (profile: Doc<'childProfiles'>) => {
-    setDeletingProfileId(profile._id)
-    setDeletingProfileName(profile.name)
+    setDeletingProfileState({
+      name: profile.name,
+      id: profile._id,
+    })
     setIsDeleteDialogOpen(true)
   }
 
-  const handleDeleteProfile = async () => {
-    if (!deletingProfileId) return
-
-    const [error] = await handlePromise(
-      deleteChildProfile({
-        childId: deletingProfileId,
-      })
-    )
-
-    if (error) {
-      toast.error('Failed to delete child profile')
-      return
-    }
-    setIsDeleteDialogOpen(false)
-    setDeletingProfileId(null)
-    setDeletingProfileName('')
+  const handleDeleteProfile = async (
+    deletingProfileId: Id<'childProfiles'>
+  ) => {
+    return await deleteChildProfile({
+      childId: deletingProfileId,
+    })
   }
 
   const openEditDialog = (profile: Doc<'childProfiles'>) => {
@@ -219,6 +214,7 @@ export function ChildProfileSettings() {
         isOpen={isEditDialogOpen}
         onOpenChange={setIsEditDialogOpen}
         profileId={editingProfileId}
+        key={editingProfileId}
         initialEditProfileState={initialEditProfileState}
         onEditProfile={handleEditProfile}
         onSuccess={resetInitialEditProfileState}
@@ -227,8 +223,14 @@ export function ChildProfileSettings() {
       <DeleteChildProfileDialog
         isOpen={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}
-        profileName={deletingProfileName}
+        deleteProfileState={deletingProfileState}
         onDelete={handleDeleteProfile}
+        onSuccess={() => {
+          setDeletingProfileState({
+            name: '',
+            id: null,
+          })
+        }}
       />
     </div>
   )
