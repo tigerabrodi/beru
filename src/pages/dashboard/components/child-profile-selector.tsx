@@ -83,7 +83,7 @@ export function ChildProfileSelector({
                   {profile.name}, {profile.age} years old
                 </Label>
                 <p className="text-muted-foreground line-clamp-2 h-10 overflow-hidden text-sm">
-                  Interests: {profile.interests.split(',').join(', ')}
+                  Interests: {profile.interests}
                 </p>
               </div>
             </div>
