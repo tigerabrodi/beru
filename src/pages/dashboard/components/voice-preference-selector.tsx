@@ -43,6 +43,7 @@ export function VoicePreferenceSelector({
           <Button
             variant="outline"
             size="sm"
+            type="button"
             onClick={handleToggleManualEntry}
             className="gap-2"
           >

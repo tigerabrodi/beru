@@ -44,6 +44,7 @@ export function ChildProfileSelector({
           <Button
             variant="outline"
             size="sm"
+            type="button"
             onClick={handleToggleManualEntry}
             className="gap-2"
           >
@@ -72,7 +73,10 @@ export function ChildProfileSelector({
             <div
               key={profile._id}
               className="hover:bg-muted flex cursor-pointer items-center gap-2 rounded-md border p-3"
-              onClick={() => onSelectChild(profile._id)}
+              onClick={() => {
+                console.log('profile', profile)
+                onSelectChild(profile._id)
+              }}
             >
               <RadioGroupItem value={profile._id} id={profile._id} />
               <div className="flex-1">
