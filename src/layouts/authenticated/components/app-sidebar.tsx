@@ -10,6 +10,7 @@ import {
   SidebarTrigger,
   useSidebar,
 } from '@/components/ui/sidebar'
+import { usePrefetchQuery } from '@/hooks/use-prefetch-query'
 import { ROUTES } from '@/lib/constants'
 import { cn } from '@/lib/utils'
 import { useAuthActions } from '@convex-dev/auth/react'
@@ -26,12 +27,24 @@ export function AppSidebar() {
 
   const stories = useQuery(api.stories.queries.getStories)
 
+  const prefetchChildProfiles = usePrefetchQuery(
+    api.childProfiles.queries.getChildProfiles
+  )
+  const prefetchVoicePresets = usePrefetchQuery(
+    api.voicePresets.queries.getVoicePresets
+  )
+
   const favoriteStories = stories?.filter((story) => story.isFavorite) ?? []
   const nonFavoriteStories = stories?.filter((story) => !story.isFavorite) ?? []
 
   const recentStories = [...nonFavoriteStories].sort(
     (a, b) => b.createdAt - a.createdAt
   )
+
+  const handleDashboardPrefetch = () => {
+    prefetchChildProfiles({})
+    prefetchVoicePresets({})
+  }
 
   return (
     <Sidebar>
@@ -55,7 +68,10 @@ export function AppSidebar() {
               asChild
               isActive={location.pathname === ROUTES.dashboard}
             >
-              <Link to={ROUTES.dashboard}>
+              <Link
+                to={ROUTES.dashboard}
+                onMouseEnter={handleDashboardPrefetch}
+              >
                 <Home className="size-4" />
                 <span>Dashboard</span>
               </Link>
