@@ -1,10 +1,11 @@
 import { InputWithFeedback } from '@/components/input-with-feedback'
 import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+import { cn } from '@/lib/utils'
 import { Doc, Id } from '@convex/_generated/dataModel'
-import { PlusCircle, User } from 'lucide-react'
+import { Check, PlusCircle, User } from 'lucide-react'
 import { useState } from 'react'
 
 type ChildProfileSelectorProps = {
@@ -64,35 +65,39 @@ export function ChildProfileSelector({
       )}
 
       {!isManualEntry && childProfiles.length > 0 ? (
-        <RadioGroup
-          value={selectedChildId || ''}
-          onValueChange={(value) => onSelectChild(value as Id<'childProfiles'>)}
-          className="flex max-h-[300px] flex-col gap-3 overflow-y-auto pr-2"
-        >
-          {childProfiles.map((profile) => (
-            <div
-              key={profile._id}
-              className="hover:bg-muted flex cursor-pointer items-center gap-2 rounded-md border p-3"
-              onClick={() => {
-                console.log('profile', profile)
-                onSelectChild(profile._id)
-              }}
-            >
-              <RadioGroupItem value={profile._id} id={profile._id} />
-              <div className="flex-1">
-                <Label
-                  htmlFor={profile._id}
-                  className="cursor-pointer font-medium"
-                >
-                  {profile.name}, {profile.age} years old
-                </Label>
-                <p className="text-muted-foreground line-clamp-2 h-10 overflow-hidden text-sm">
-                  Interests: {profile.interests}
-                </p>
-              </div>
-            </div>
-          ))}
-        </RadioGroup>
+        <div className="flex max-h-[300px] flex-col gap-3 overflow-y-auto pr-2">
+          {childProfiles.map((profile) => {
+            const isSelected = selectedChildId === profile._id
+            return (
+              <Card
+                key={profile._id}
+                className={cn(
+                  'hover:bg-muted/60 relative flex cursor-pointer flex-row items-center gap-3 border-2 p-2 transition-colors',
+                  {
+                    'bg-primary/10 border-primary shadow-sm': isSelected,
+                    'border-transparent': !isSelected,
+                  }
+                )}
+                onClick={() => onSelectChild(profile._id)}
+              >
+                {isSelected && (
+                  <div className="bg-primary absolute top-1/2 left-2 shrink-0 -translate-y-1/2 rounded-full p-1">
+                    <Check className="text-primary-foreground size-3.5" />
+                  </div>
+                )}
+                <div className="flex-1 pl-8">
+                  <p className="font-medium">
+                    {profile.name}, {profile.age} years old
+                  </p>
+                  <p className="text-muted-foreground line-clamp-2 overflow-hidden text-sm">
+                    <span className="font-medium">Interests:</span>{' '}
+                    {profile.interests}
+                  </p>
+                </div>
+              </Card>
+            )
+          })}
+        </div>
       ) : (
         <div className="flex flex-col gap-4">
           <div>
