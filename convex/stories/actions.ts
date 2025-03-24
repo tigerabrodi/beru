@@ -9,26 +9,27 @@ import { Doc, Id } from '../_generated/dataModel'
 import { action } from '../_generated/server'
 import { handlePromise } from '../lib/utils'
 
-export const storyIdeasSchema = z
-  .array(
-    z.object({
-      title: z
-        .string()
-        .describe(
-          'A catchy, child-friendly title for the bedtime story. No more than 6-8 words.'
-        ),
-      description: z
-        .string()
-        .describe(
-          "A brief 1-2 sentence description that previews the story's plot."
-        ),
-      id: z.string().describe('The unique ID of the story idea'),
-    })
-  )
-  .length(5)
-  .describe('Five unique bedtime story ideas for a child')
+export const storyIdeasSchema = z.object({
+  stories: z
+    .array(
+      z.object({
+        title: z
+          .string()
+          .describe(
+            'A catchy, child-friendly title for the bedtime story. No more than 6-8 words.'
+          ),
+        description: z
+          .string()
+          .describe(
+            "A brief 1-2 sentence description that previews the story's plot."
+          ),
+        id: z.string().describe('The unique ID of the story idea'),
+      })
+    )
+    .describe('Five unique bedtime story ideas for a child'),
+})
 
-export type StoryIdeasType = z.infer<typeof storyIdeasSchema>
+export type StoryIdeasType = z.infer<typeof storyIdeasSchema.shape.stories>
 
 const GenerateStoryIdeasArgs = v.union(
   v.object({
@@ -79,11 +80,12 @@ export const generateStoryIdeas = action({
         throw new ConvexError('Failed to get child profile')
       }
 
-      if (!childProfile) {
+      if (!childProfileResult) {
+        console.log('childProfileResult', childProfileResult)
         throw new ConvexError('Child profile not found')
       }
 
-      childProfile = childProfileResult as Doc<'childProfiles'>
+      childProfile = childProfileResult
     }
 
     // Initialize OpenAI client
@@ -103,13 +105,28 @@ export const generateStoryIdeas = action({
     prompt += `. Each story idea should be child-appropriate, engaging, and suitable for bedtime reading.`
 
     // Generate story ideas using OpenAI
-    const { object } = await generateObject({
-      model: openai('gpt-4o'),
-      schema: storyIdeasSchema,
-      prompt,
-    })
+    const [error, generateObjResult] = await handlePromise(
+      generateObject({
+        model: openai('gpt-4o'),
+        schema: storyIdeasSchema,
+        prompt,
+      })
+    )
 
-    return object
+    if (error) {
+      console.error(error)
+      throw new ConvexError(
+        'Failed to generate story ideas. Maybe your OpenAI API key is not correct.'
+      )
+    }
+
+    if (!generateObjResult) {
+      throw new ConvexError(
+        'Failed to generate story ideas. Something went wrong. Please try again. Maybe check your OpenAI credits.'
+      )
+    }
+
+    return generateObjResult.object.stories
   },
 })
 
@@ -180,11 +197,11 @@ export const generateStory = action({
         throw new ConvexError('Failed to get child profile')
       }
 
-      if (!childProfile) {
+      if (!childProfileResult) {
         throw new ConvexError('Child profile not found')
       }
 
-      childProfile = childProfileResult as Doc<'childProfiles'>
+      childProfile = childProfileResult
     }
 
     // If voicePresetId is provided, retrieve full preset
@@ -199,11 +216,11 @@ export const generateStory = action({
         throw new ConvexError('Failed to get voice preset')
       }
 
-      if (!voicePreset) {
+      if (!voicePresetResult) {
         throw new ConvexError('Voice preset not found')
       }
 
-      voicePreset = voicePresetResult as Doc<'voicePresets'>
+      voicePreset = voicePresetResult
     }
 
     // Initialize OpenAI client
