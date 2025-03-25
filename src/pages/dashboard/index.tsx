@@ -7,6 +7,7 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { ROUTES } from '@/lib/constants'
+import { Status } from '@/lib/schemas'
 import { handlePromise } from '@/lib/utils'
 import { api } from '@convex/_generated/api'
 import { Id } from '@convex/_generated/dataModel'
@@ -63,9 +64,15 @@ export function DashboardPage() {
     useState<Id<'childProfiles'> | null>(null)
   const [selectedVoiceId, setSelectedVoiceId] =
     useState<Id<'voicePresets'> | null>(null)
-
   const [storiesWithMetadata, setStoriesWithMetadata] =
     useState<StoriesWithMetadata | null>(null)
+  const [generatingStoryState, setGeneratingStoryState] = useState<{
+    status: Status
+    storyId: string
+  }>({
+    status: 'idle',
+    storyId: '',
+  })
 
   useEffect(() => {
     if (childProfiles && childProfiles.length > 0) {
@@ -77,7 +84,10 @@ export function DashboardPage() {
     }
   }, [childProfiles, voicePresets])
 
-  const [, formAction, isGenerating] = useActionState<FormState, FormData>(
+  const [, formAction, isGeneratingStoryIdeas] = useActionState<
+    FormState,
+    FormData
+  >(
     async (_, formData) => {
       const childProfileInput: ChildProfileInput = selectedChildId
         ? { childId: selectedChildId }
@@ -122,11 +132,16 @@ export function DashboardPage() {
     { status: 'idle' }
   )
 
-  const handleSelectIdea = async (id: string) => {
+  const handleGenerateStory = async (id: string) => {
     if (!storiesWithMetadata) {
       toast.error('No story ideas generated')
       return
     }
+
+    setGeneratingStoryState({
+      status: 'loading',
+      storyId: id,
+    })
 
     const selectedIdea = storiesWithMetadata.stories.find(
       (story) => story.id === id
@@ -134,6 +149,10 @@ export function DashboardPage() {
 
     if (!selectedIdea) {
       toast.error('Idea not found')
+      setGeneratingStoryState({
+        status: 'error',
+        storyId: id,
+      })
       return
     }
 
@@ -152,12 +171,22 @@ export function DashboardPage() {
         toast.error('Failed to create story')
       }
 
+      setGeneratingStoryState({
+        status: 'error',
+        storyId: '',
+      })
       return
     }
 
+    setGeneratingStoryState({
+      status: 'success',
+      storyId: '',
+    })
     toast.success('Story created successfully')
     void navigate(generatePath(ROUTES.storyDetail, { id: newStoryId }))
   }
+
+  const isGeneratingStory = generatingStoryState.status === 'loading'
 
   return (
     <form className="flex flex-col gap-5 md:gap-8" action={formAction}>
@@ -202,27 +231,22 @@ export function DashboardPage() {
         <Button
           size="lg"
           type="submit"
-          disabled={isGenerating || !selectedChildId}
+          disabled={isGeneratingStoryIdeas || isGeneratingStory}
           className="gap-2"
+          loadingText="Generating ideas..."
+          isLoading={isGeneratingStoryIdeas}
         >
-          {isGenerating ? (
-            <>
-              <div className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent"></div>
-              Generating Ideas...
-            </>
-          ) : (
-            <>
-              <Sparkles className="size-4" />
-              Generate Story Ideas
-            </>
-          )}
+          <Sparkles className="size-4" />
+          Generate Story Ideas
         </Button>
       </div>
 
       {storiesWithMetadata && storiesWithMetadata.stories.length > 0 && (
         <StoryIdeas
           ideas={storiesWithMetadata.stories}
-          onSelectIdea={handleSelectIdea}
+          onSelectIdea={handleGenerateStory}
+          isGeneratingStory={isGeneratingStory}
+          generatingStoryId={generatingStoryState.storyId}
         />
       )}
     </form>
