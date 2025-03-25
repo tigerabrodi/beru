@@ -16,12 +16,12 @@ export const storyIdeasSchema = z.object({
         title: z
           .string()
           .describe(
-            'A catchy, child-friendly title for the bedtime story. No more than 6-8 words.'
+            'A catchy, child-friendly title for the bedtime story. No more than 6-10 words.'
           ),
         description: z
           .string()
           .describe(
-            "A brief 1-2 sentence description that previews the story's plot."
+            "A brief 1-2 sentences description that previews the story's plot. It's important parents understand what the story is about and can ask their kid if they want to hear it."
           ),
         id: z.string().describe('The unique ID of the story idea'),
       })
@@ -88,6 +88,15 @@ export const generateStoryIdeas = action({
       childProfile = childProfileResult
     }
 
+    const allExistingStories = await ctx.runQuery(
+      api.stories.queries.getAllStoriesForCurrentUser
+    )
+
+    const allExistingStoryTitles =
+      allExistingStories && allExistingStories.length > 0
+        ? allExistingStories.map((story) => story.title).join(', ')
+        : null
+
     // Initialize OpenAI client
     const openai = createOpenAI({
       apiKey,
@@ -102,7 +111,12 @@ export const generateStoryIdeas = action({
       prompt += `Generate 5 bedtime story ideas for ${args.input.childName}, who is ${args.input.childAge} years old,  and interested in ${args.input.childInterests}`
     }
 
-    prompt += `. Each story idea should be child-appropriate, engaging, and suitable for bedtime reading.`
+    prompt += `. Each story idea should be child-appropriate, engaging, and suitable for bedtime reading. Each idea should have a title and a description.`
+
+    // We do this to provide a better experience for the user
+    if (allExistingStoryTitles) {
+      prompt += `\n\nHere are some story titles that are already taken, you should avoid using them: ${allExistingStoryTitles}`
+    }
 
     // Generate story ideas using OpenAI
     const [error, generateObjResult] = await handlePromise(
