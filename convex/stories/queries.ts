@@ -5,7 +5,7 @@ import { query } from '../_generated/server'
 /**
  * Get all stories for current user
  */
-export const getStories = query({
+export const getAllStoriesForCurrentUser = query({
   args: {},
   handler: async (ctx) => {
     const userId = await getAuthUserId(ctx)
