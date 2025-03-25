@@ -25,7 +25,7 @@ export function AppSidebar() {
   const { isMobile, toggleSidebar } = useSidebar()
   const user = useQuery(api.users.queries.getCurrentUser)
 
-  const stories = useQuery(api.stories.queries.getStories)
+  const stories = useQuery(api.stories.queries.getAllStoriesForCurrentUser)
 
   const prefetchChildProfiles = usePrefetchQuery(
     api.childProfiles.queries.getChildProfiles
