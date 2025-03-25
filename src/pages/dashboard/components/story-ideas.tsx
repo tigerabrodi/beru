@@ -1,4 +1,5 @@
 import { Card, CardContent } from '@/components/ui/card'
+import { cn } from '@/lib/utils'
 import { StoryIdeasType } from '@convex/stories/actions'
 import { Loader2 } from 'lucide-react'
 import { motion } from 'motion/react'
@@ -31,23 +32,32 @@ export function StoryIdeas({
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: index * 0.1 }}
           >
-            <Card className="relative h-[200px] transition-shadow duration-200 hover:shadow-md">
-              {/* TODO: add loading state for beru */}
+            <Card
+              className={cn(
+                'relative transition-shadow duration-200 hover:shadow-md',
+                {
+                  // this is the original shadow inside card
+                  // we're just reverting
+                  'hover:shadow-sm': isGeneratingStory,
+                }
+              )}
+            >
               {generatingStoryId === idea.id && (
                 <Loader2 className="text-muted-foreground absolute top-2 right-2 size-4 animate-spin" />
               )}
               <button
-                className="w-full disabled:cursor-wait disabled:opacity-75"
+                // ! is important here to override the default cursor
+                className="w-full disabled:cursor-auto! disabled:opacity-75"
                 type="button"
                 onClick={() => onSelectIdea(idea.id)}
                 disabled={isGeneratingStory}
               >
-                <CardContent className="flex flex-col gap-2 p-6">
+                <CardContent className="flex h-full flex-col gap-2 overflow-y-auto p-6">
                   <h3 className="line-clamp-2 text-lg font-medium">
                     {idea.title}
                   </h3>
-                  <p className="text-muted-foreground text-sm">
-                    A personalized story based on this theme
+                  <p className="text-muted-foreground h-full overflow-y-auto text-sm">
+                    {idea.description}
                   </p>
                 </CardContent>
               </button>
