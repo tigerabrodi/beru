@@ -57,7 +57,7 @@ export const getFavoriteStories = query({
 /**
  * Get a specific story by ID
  */
-export const getStory = query({
+export const getStoryById = query({
   args: {
     storyId: v.id('stories'),
   },
