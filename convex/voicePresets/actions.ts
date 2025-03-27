@@ -4,7 +4,7 @@ import { getAuthUserId } from '@convex-dev/auth/server'
 import { ConvexError, v } from 'convex/values'
 import { HumeClient } from 'hume'
 import { z } from 'zod'
-import { api } from '../_generated/api'
+import { api, internal } from '../_generated/api'
 import { Id } from '../_generated/dataModel'
 import { action } from '../_generated/server'
 import { handlePromise } from '../lib/utils'
@@ -64,20 +64,18 @@ export const generateVoicePreset = action({
       })
     )
 
-    console.log('speechError', speechError)
-
     if (speechError || !speech) {
       throw new ConvexError(`Failed to generate voice: ${speechError?.message}`)
     }
 
     // Get voice ID from generation
-    const humeVoiceId = speech.generations[0].generationId
+    const generationId = speech.generations[0].generationId
 
     // Save voice to Hume library for reuse
-    const [saveError] = await handlePromise(
+    const [saveError, saveResponse] = await handlePromise(
       hume.tts.voices.create({
         name: args.name,
-        generationId: humeVoiceId,
+        generationId,
       })
     )
 
@@ -104,6 +102,12 @@ export const generateVoicePreset = action({
       throw new ConvexError(`Failed to save voice to Hume.`)
     }
 
+    const humeVoiceId = saveResponse?.id
+
+    if (!humeVoiceId) {
+      throw new ConvexError('Failed to save voice to Hume.')
+    }
+
     // Store sample audio in Convex
     const audioBase64 = speech.generations[0].audio
     const audioBuffer = Buffer.from(audioBase64, 'base64')
@@ -124,7 +128,7 @@ export const generateVoicePreset = action({
       ctx.runMutation(api.voicePresets.mutations.createVoicePreset, {
         name: args.name,
         description: args.description,
-        humeVoiceId: humeVoiceId,
+        humeVoiceId,
         sampleAudioId: storageId,
       })
     )
@@ -136,5 +140,78 @@ export const generateVoicePreset = action({
     }
 
     return presetId
+  },
+})
+
+export const deleteVoicePreset = action({
+  args: {
+    presetId: v.id('voicePresets'),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx)
+    if (!userId) {
+      throw new ConvexError('User not authenticated')
+    }
+
+    const preset = await ctx.runQuery(
+      api.voicePresets.queries.getVoicePresetById,
+      {
+        presetId: args.presetId,
+      }
+    )
+
+    if (!preset) {
+      throw new ConvexError('Voice preset not found')
+    }
+
+    if (preset.userId !== userId) {
+      throw new ConvexError('Not authorized to delete this preset')
+    }
+
+    const humeAiApiKey = await ctx.runAction(api.users.actions.getHumeApiKey)
+
+    if (!humeAiApiKey) {
+      throw new ConvexError('Hume API key not found')
+    }
+
+    const [humeDeleteError, humeDeleteResponse] = await handlePromise(
+      fetch(`https://api.hume.ai/v0/evi/custom_voices/${preset.humeVoiceId}`, {
+        method: 'DELETE',
+        headers: {
+          'X-Hume-Api-Key': humeAiApiKey,
+        },
+      })
+    )
+
+    // The reason we only log errors here is because we still wanna
+    // let users delete the preset even if the voice is not found in Hume for some reason
+    if (humeDeleteError) {
+      console.log('humeDeleteError', humeDeleteError)
+    }
+
+    if (!humeDeleteResponse!.ok) {
+      console.log('humeDeleteResponse', humeDeleteResponse)
+    }
+
+    // First delete the stored audio file
+    const [deleteFileFromStorageError] = await handlePromise(
+      ctx.storage.delete(preset.sampleAudioId)
+    )
+
+    if (deleteFileFromStorageError) {
+      throw new ConvexError(`Failed to delete file from storage`)
+    }
+
+    const [deletePresetError] = await handlePromise(
+      ctx.runMutation(internal.voicePresets.mutations.deleteVoicePreset, {
+        presetId: args.presetId,
+      })
+    )
+
+    if (deletePresetError) {
+      throw new ConvexError(`Failed to delete preset`)
+    }
+
+    return true
   },
 })
