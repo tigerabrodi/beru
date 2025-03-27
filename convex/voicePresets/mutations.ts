@@ -1,7 +1,7 @@
 import { getAuthUserId } from '@convex-dev/auth/server'
 import { ConvexError, v } from 'convex/values'
 import { Doc } from '../_generated/dataModel'
-import { mutation } from '../_generated/server'
+import { internalMutation, mutation } from '../_generated/server'
 import { getCurrentTimestamp } from '../lib/utils'
 
 /**
@@ -72,30 +72,11 @@ export const updateVoicePreset = mutation({
 /**
  * Delete a voice preset
  */
-export const deleteVoicePreset = mutation({
+export const deleteVoicePreset = internalMutation({
   args: {
     presetId: v.id('voicePresets'),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx)
-    if (!userId) {
-      throw new ConvexError('User not authenticated')
-    }
-
-    const preset = await ctx.db.get(args.presetId)
-
-    // Verify preset exists and belongs to user
-    if (!preset) {
-      throw new ConvexError('Voice preset not found')
-    }
-
-    if (preset.userId !== userId) {
-      throw new ConvexError('Not authorized to delete this preset')
-    }
-
-    // First delete the stored audio file
-    await ctx.storage.delete(preset.sampleAudioId)
-
     // Then delete the preset record
     await ctx.db.delete(args.presetId)
     return true
