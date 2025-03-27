@@ -8,11 +8,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import { Status } from '@/lib/schemas'
 import { handlePromise } from '@/lib/utils'
 import { api } from '@convex/_generated/api'
 import { Id } from '@convex/_generated/dataModel'
-import { useMutation } from 'convex/react'
+import { useAction } from 'convex/react'
 import { ConvexError } from 'convex/values'
+import { Loader2 } from 'lucide-react'
+import { useState } from 'react'
 import { toast } from 'sonner'
 
 interface DeleteVoicePresetDialogProps {
@@ -28,12 +31,15 @@ export function DeleteVoicePresetDialog({
   isOpen,
   onOpenChange,
 }: DeleteVoicePresetDialogProps) {
-  const deleteVoicePreset = useMutation(
-    api.voicePresets.mutations.deleteVoicePreset
+  const deleteVoicePreset = useAction(
+    api.voicePresets.actions.deleteVoicePreset
   )
+
+  const [deleteStatus, setDeleteStatus] = useState<Status>('idle')
 
   const handleDeletePreset = async () => {
     if (presetId) {
+      setDeleteStatus('loading')
       const [error] = await handlePromise(deleteVoicePreset({ presetId }))
 
       if (error) {
@@ -43,9 +49,11 @@ export function DeleteVoicePresetDialog({
           toast.error('Failed to delete voice preset')
         }
 
+        setDeleteStatus('error')
         return
       }
 
+      setDeleteStatus('success')
       toast.success('Voice preset deleted successfully')
       onOpenChange(false)
     }
@@ -67,8 +75,13 @@ export function DeleteVoicePresetDialog({
           <AlertDialogAction
             onClick={handleDeletePreset}
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            disabled={deleteStatus === 'loading'}
           >
-            Delete
+            {deleteStatus === 'loading' ? (
+              <Loader2 className="animate-spin" />
+            ) : (
+              'Delete'
+            )}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
