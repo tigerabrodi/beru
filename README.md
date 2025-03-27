@@ -30,7 +30,7 @@ I recommend getting the first or second paid plan if you plan on using this for 
 
 If you've a bunch of stories already, instead of generating new ones, you can play the old ones for your kids again to save on credits.
 
-Of course, as long as the kid doesn't notice it's the same story as befor hehe
+Of course, as long as the kid doesn't notice it's the same story as before hehe
 
 ## Tech stack 💻
 
