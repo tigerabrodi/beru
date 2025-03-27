@@ -16,6 +16,22 @@ API Keys needed:
 - OpenAI API Key
 - HumeAI API Key
 
+## Notes
+
+OpenAI doesn't have a free tier.
+
+I think 5-10 dollars should be enough for a while.
+
+---
+
+HumeAI's free tier has a limit of 10 000 characters per month.
+
+I recommend getting the first or second paid plan if you plan on using this for a while for your kids.
+
+If you've a bunch of stories already, instead of generating new ones, you can play the old ones for your kids again to save on credits.
+
+Of course, as long as the kid doesn't notice it's the same story as befor hehe
+
 ## Tech stack 💻
 
 - [React](https://react.dev/) for frontend.
