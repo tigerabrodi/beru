@@ -1,8 +1,11 @@
+'use node'
+
 import { createOpenAI } from '@ai-sdk/openai'
 import { getAuthUserId } from '@convex-dev/auth/server'
 import { generateObject, generateText } from 'ai'
 import { ConvexError, v } from 'convex/values'
-import { HumeClient } from 'hume'
+import { HumeClient, HumeError, HumeTimeoutError } from 'hume'
+import { ReturnTts } from 'hume/api/resources/tts'
 import { z } from 'zod'
 import { api, internal } from '../_generated/api'
 import { Doc, Id } from '../_generated/dataModel'
@@ -221,7 +224,7 @@ export const generateStory = action({
     // If voicePresetId is provided, retrieve full preset
     if ('voicePresetId' in args.voicePresetInput) {
       const [voicePresetError, voicePresetResult] = await handlePromise(
-        ctx.runQuery(api.voicePresets.queries.getVoicePreset, {
+        ctx.runQuery(api.voicePresets.queries.getVoicePresetById, {
           presetId: args.voicePresetInput.voicePresetId,
         })
       )
@@ -253,7 +256,7 @@ export const generateStory = action({
 
     prompt += `. The story should:
       - Be appropriate for a child's bedtime reading
-      - Be around 500-700 words
+      - Very strict: Be around 100 words. I recommend reviewing and making it shorter if needed!
       - Have a clear beginning, middle, and end
       - Include a positive message or moral
       - Use age-appropriate language and concepts
@@ -335,7 +338,7 @@ export const generateStoryVoice = action({
     }
 
     const story: Doc<'stories'> | null = await ctx.runQuery(
-      api.stories.queries.getStory,
+      api.stories.queries.getStoryById,
       { storyId: args.storyId }
     )
 
@@ -360,7 +363,7 @@ export const generateStoryVoice = action({
       // If using a saved voice preset
       if (story.voicePresetId) {
         const [voicePresetError, voicePreset] = await handlePromise(
-          ctx.runQuery(api.voicePresets.queries.getVoicePreset, {
+          ctx.runQuery(api.voicePresets.queries.getVoicePresetById, {
             presetId: story.voicePresetId,
           })
         )
@@ -372,28 +375,62 @@ export const generateStoryVoice = action({
         }
 
         // Use the saved voice ID
-        voiceResponse = await hume.tts.synthesizeJson({
-          utterances: [
-            {
-              voice: { id: voicePreset.humeVoiceId },
-              text: story.content,
-            },
-          ],
-        })
+        const [savedVoiceError, savedVoiceResponse] = await handlePromise(
+          hume.tts.synthesizeJson({
+            utterances: [
+              {
+                voice: { id: voicePreset.humeVoiceId },
+                text: story.content,
+              },
+            ],
+          })
+        )
+
+        if (savedVoiceError) {
+          if (savedVoiceError instanceof HumeError) {
+            console.error(
+              `Hume Error: ${savedVoiceError.statusCode} - ${savedVoiceError.message}`
+            )
+            console.error(savedVoiceError.body)
+          } else if (savedVoiceError instanceof HumeTimeoutError) {
+            console.error('Hume timeout error:', savedVoiceError)
+          } else {
+            console.error('Unknown Error:', savedVoiceError)
+          }
+
+          throw new ConvexError(
+            `Failed to generate audio when using saved voice preset.`
+          )
+        }
+
+        voiceResponse = savedVoiceResponse as ReturnTts
       }
       // Otherwise use the voice description
       // This is stored on the story itself - what they manually typed in
       else if (story.voiceDescription) {
-        voiceResponse = await hume.tts.synthesizeJson({
-          utterances: [
-            {
-              description: story.voiceDescription,
-              text: story.content,
-            },
-          ],
-        })
+        const [voiceDescriptionError, voiceDescriptionResponse] =
+          await handlePromise(
+            hume.tts.synthesizeJson({
+              utterances: [
+                {
+                  description: story.voiceDescription,
+                  text: story.content,
+                },
+              ],
+            })
+          )
+
+        if (voiceDescriptionError) {
+          throw new ConvexError(
+            `Failed to generate audio when using manually typed in voice description.`
+          )
+        }
+
+        voiceResponse = voiceDescriptionResponse as ReturnTts
       }
       // Fallback to a generic storyteller voice
+      // this should never happen actually
+      // because they either have to have a preset or manually type in a voice description
       else {
         voiceResponse = await hume.tts.synthesizeJson({
           utterances: [
