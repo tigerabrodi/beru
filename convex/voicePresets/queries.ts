@@ -32,7 +32,7 @@ export const getVoicePresets = query({
 /**
  * Get a specific voice preset by ID
  */
-export const getVoicePreset = query({
+export const getVoicePresetById = query({
   args: {
     presetId: v.id('voicePresets'),
   },
