@@ -52,3 +52,9 @@ Of course, as long as the kid doesn't notice it's the same story as before hehe
 ## License
 
 This project is licensed under the MIT License ❤️
+
+## Todo
+
+- [ ] Volume fixes: Should not restart story.
+- [ ] Communicate how long generations roughly take.
+- [ ] Prefetch story before redirecting after creating it from ideas page.
