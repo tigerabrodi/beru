@@ -1,6 +1,5 @@
 https://github.com/user-attachments/assets/e083cdad-4834-4dce-8edc-a9a49767008f
 
-
 <div align="center">
 <h1 align="center">
   <a href="https://beru-bedtime-stories.vercel.app/">Beru</a>
@@ -55,9 +54,3 @@ Of course, as long as the kid doesn't notice it's the same story as before hehe
 ## License
 
 This project is licensed under the MIT License ❤️
-
-## Todo
-
-- [ ] Volume fixes: Should not restart story.
-- [ ] Communicate how long generations roughly take.
-- [ ] Prefetch story before redirecting after creating it from ideas page.
