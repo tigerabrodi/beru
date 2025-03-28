@@ -65,7 +65,18 @@ export function StoryAudioPlayer({
       audio.removeEventListener('durationchange', handleDurationChange)
       audio.removeEventListener('ended', handleEnded)
     }
-  }, [audioUrl, volume])
+
+    // we don't wanna recreate this when volume changes
+    // otherwise it'll restart the story and things break
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [audioUrl])
+
+  // Handle volume changes separately
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = isMuted ? 0 : volume
+    }
+  }, [volume, isMuted])
 
   // Update audio src when audioUrl changes
   useEffect(() => {
