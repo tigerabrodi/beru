@@ -17,7 +17,11 @@ function LoadingText({
   // first check if the audio is generating
   // if it is, show it
   if (audioStatus === 'generating') {
-    return <p className="text-sm font-medium">Generating voice...</p>
+    return (
+      <p className="text-sm font-medium">
+        Generating voice... (takes a few minutes)
+      </p>
+    )
   }
 
   // show preparing audio right away if client side is generating
