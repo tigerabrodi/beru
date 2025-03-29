@@ -377,14 +377,20 @@ export const generateStoryVoice = action({
 
         // Use the saved voice ID
         const [savedVoiceError, savedVoiceResponse] = await handlePromise(
-          hume.tts.synthesizeJson({
-            utterances: [
-              {
-                voice: { id: voicePreset.humeVoiceId },
-                text: story.content,
-              },
-            ],
-          })
+          hume.tts.synthesizeJson(
+            {
+              utterances: [
+                {
+                  voice: { id: voicePreset.humeVoiceId },
+                  text: story.content,
+                },
+              ],
+            },
+            {
+              // 5 minutes
+              timeoutInSeconds: 300,
+            }
+          )
         )
 
         if (savedVoiceError) {
@@ -411,14 +417,20 @@ export const generateStoryVoice = action({
       else if (story.voiceDescription) {
         const [voiceDescriptionError, voiceDescriptionResponse] =
           await handlePromise(
-            hume.tts.synthesizeJson({
-              utterances: [
-                {
-                  description: story.voiceDescription,
-                  text: story.content,
-                },
-              ],
-            })
+            hume.tts.synthesizeJson(
+              {
+                utterances: [
+                  {
+                    description: story.voiceDescription,
+                    text: story.content,
+                  },
+                ],
+              },
+              {
+                // 5 minutes
+                timeoutInSeconds: 300,
+              }
+            )
           )
 
         if (voiceDescriptionError) {
