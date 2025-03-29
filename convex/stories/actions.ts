@@ -256,7 +256,8 @@ export const generateStory = action({
 
     prompt += `. The story should:
       - Be appropriate for a child's bedtime reading
-      - Very strict: Be around 100 words. I recommend reviewing and making it shorter if needed!
+      - Be around 800-1000 words.
+      - Very strict: No more than 5000 characters! Make it shorter if needed!
       - Have a clear beginning, middle, and end
       - Include a positive message or moral
       - Use age-appropriate language and concepts
